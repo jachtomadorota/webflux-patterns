@@ -1,18 +1,15 @@
 package com.vinsguru.webfluxpatterns.sec02.dto;
 
-import lombok.Data;
-import lombok.ToString;
-
 import java.time.LocalDate;
 
-@Data
-@ToString
-public class FlightResult {
+public record FlightResult(String airline,
+                           LocalDate date,
+                           String from,
+                           Integer price,
+                           String to) {
 
-    private String airline;
-    private String from;
-    private String to;
-    private Double price;
-    private LocalDate date;
 
+    public FlightResult withToAndFromAndAirline(String to, String from, String airline){
+        return new FlightResult(airline, this.date, from, this.price, to);
+    }
 }

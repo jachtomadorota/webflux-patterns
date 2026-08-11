@@ -37,9 +37,7 @@ public class ProductAggregatorService {
                                     .amountSaved(amountSaved)
                                     .discountedPrice(price - amountSaved)
                                     .build())
-                            .reviews(ReviewsWrapper.builder()
-                                    .reviews(tuple.getT3().reviews())
-                                    .build())
+                            .reviews(tuple.getT3())
                             .build();
                 });
     }

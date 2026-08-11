@@ -1,29 +1,28 @@
 package com.vinsguru.webfluxpatterns.sec01.client;
 
-import com.vinsguru.webfluxpatterns.sec01.dto.ProductResponse;
+import com.vinsguru.webfluxpatterns.sec01.dto.Product;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
-@Service
+@Component
+@RequiredArgsConstructor
 public class ProductClient {
 
-    private final WebClient client;
+    private final WebClient webClient;
 
-    public ProductClient(@Value("${sec01.product.service}") String baseUrl){
-        this.client = WebClient.builder()
-                               .baseUrl(baseUrl)
-                               .build();
+    public ProductClient(@Value("${sec01.product.service}") String baseUrl) {
+        this.webClient = WebClient.builder()
+                .baseUrl(baseUrl)
+                .build();
     }
 
-    public Mono<ProductResponse> getProduct(Integer id){
-        return this.client
-                .get()
+    public Mono<Product> getProductById(Integer id) {
+        return this.webClient.get()
                 .uri("{id}", id)
                 .retrieve()
-                .bodyToMono(ProductResponse.class)
-                .onErrorResume(ex -> Mono.empty());
+                .bodyToMono(Product.class);
     }
-
-}
+ }

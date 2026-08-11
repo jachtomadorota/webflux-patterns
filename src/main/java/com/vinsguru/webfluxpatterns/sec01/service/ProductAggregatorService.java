@@ -3,51 +3,44 @@ package com.vinsguru.webfluxpatterns.sec01.service;
 import com.vinsguru.webfluxpatterns.sec01.client.ProductClient;
 import com.vinsguru.webfluxpatterns.sec01.client.PromotionClient;
 import com.vinsguru.webfluxpatterns.sec01.client.ReviewClient;
-import com.vinsguru.webfluxpatterns.sec01.dto.*;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.vinsguru.webfluxpatterns.sec01.dto.Price;
+import com.vinsguru.webfluxpatterns.sec01.dto.ProductAggregator;
+import com.vinsguru.webfluxpatterns.sec01.dto.ReviewsWrapper;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
-import java.util.List;
-
 @Service
+@RequiredArgsConstructor
 public class ProductAggregatorService {
 
-    @Autowired
-    private ProductClient productClient;
+    private final ProductClient productClient;
+    private final PromotionClient promotionClient;
+    private final ReviewClient reviewClient;
 
-    @Autowired
-    private PromotionClient promotionClient;
 
-    @Autowired
-    private ReviewClient reviewClient;
-
-    public Mono<ProductAggregate> aggregate(Integer id){
-        return Mono.zip(
-               this.productClient.getProduct(id),
-               this.promotionClient.getPromotion(id),
-               this.reviewClient.getReviews(id)
-        )
-        .map(t -> toDto(t.getT1(), t.getT2(), t.getT3()));
+    public Mono<ProductAggregator> aggregateById(Integer id) {
+        return Mono.zip(productClient.getProductById(id), promotionClient.getPromotionById(id),
+                        reviewClient.getReviewById(id))
+                .map(tuple -> {
+                    var price = tuple.getT1().price();
+                    var discount = tuple.getT2().discount().doubleValue();
+                    var amountSaved = (double) (price * discount / 100);
+                    return ProductAggregator.builder()
+                            .id(id)
+                            .category(tuple.getT1().category())
+                            .description(tuple.getT1().description())
+                            .endDate(tuple.getT2().endDate())
+                            .price(Price.builder()
+                                    .price(price)
+                                    .discount(discount)
+                                    .amountSaved(amountSaved)
+                                    .discountedPrice(price - amountSaved)
+                                    .build())
+                            .reviews(ReviewsWrapper.builder()
+                                    .reviews(tuple.getT3().reviews())
+                                    .build())
+                            .build();
+                });
     }
-
-    private ProductAggregate toDto(ProductResponse product, PromotionResponse promotion, List<Review> reviews){
-        var price = new Price();
-        var amountSaved = product.getPrice() * promotion.getDiscount() / 100;
-        var discountedPrice = product.getPrice() - amountSaved;
-        price.setListPrice(product.getPrice());
-        price.setAmountSaved(amountSaved);
-        price.setDiscountedPrice(discountedPrice);
-        price.setDiscount(promotion.getDiscount());
-        price.setEndDate(promotion.getEndDate());
-        return ProductAggregate.create(
-                product.getId(),
-                product.getCategory(),
-                product.getDescription(),
-                price,
-                reviews
-        );
-    }
-
-
 }

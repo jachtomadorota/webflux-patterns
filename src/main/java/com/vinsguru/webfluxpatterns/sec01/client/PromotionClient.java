@@ -6,6 +6,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
+import java.time.LocalDate;
+
 @Component
 public class PromotionClient {
 
@@ -21,6 +23,11 @@ public class PromotionClient {
         return this.webClient.get()
                 .uri("{id}", id)
                 .retrieve()
-                .bodyToMono(Promotion.class);
+                .bodyToMono(Promotion.class)
+                .onErrorResume(ex -> getDefaultPromotion());
+    }
+
+    private Mono<Promotion> getDefaultPromotion() {
+        return Mono.just(new Promotion(0, LocalDate.now(), -1, "no promotion"));
     }
  }

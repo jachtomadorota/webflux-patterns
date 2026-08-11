@@ -16,7 +16,7 @@ public class FlightService {
 
     private final DeltaClient deltaClient;
     private final FrontierClient frontierClient;
-    private JetblueClient jetblueClient;
+    private final JetblueClient jetblueClient;
 
 
     public Flux<FlightResult> getFlights(String from, String to) {

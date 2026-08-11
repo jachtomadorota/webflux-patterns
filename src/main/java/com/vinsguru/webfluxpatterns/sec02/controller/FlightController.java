@@ -5,6 +5,7 @@ import com.vinsguru.webfluxpatterns.sec02.service.FlightService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Flux;
 
@@ -15,7 +16,7 @@ public class FlightController {
     private final FlightService flightService;
 
     @GetMapping(value = "/flights", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public Flux<FlightResult> streamFlights(String from, String to) {
+    public Flux<FlightResult> streamFlights(@RequestParam String from, @RequestParam String to) {
         return flightService.getFlights(from, to);
     }
 }

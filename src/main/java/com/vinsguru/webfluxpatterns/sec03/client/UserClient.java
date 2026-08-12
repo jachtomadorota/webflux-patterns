@@ -1,51 +1,27 @@
 package com.vinsguru.webfluxpatterns.sec03.client;
 
-import com.vinsguru.webfluxpatterns.sec03.dto.PaymentRequest;
-import com.vinsguru.webfluxpatterns.sec03.dto.PaymentResponse;
-import com.vinsguru.webfluxpatterns.sec03.dto.Status;
+import com.vinsguru.webfluxpatterns.sec03.dto.User;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
-@Service
+@Component
 public class UserClient {
 
-    private static final String DEDUCT = "deduct";
-    private static final String REFUND = "refund";
-    private final WebClient client;
+    private final WebClient webClient;
 
-    public UserClient(@Value("${sec03.user.service}") String baseUrl){
-        this.client = WebClient.builder()
-                               .baseUrl(baseUrl)
-                               .build();
+    public UserClient(@Value("${sec03.client.service}") String baseUrl) {
+        this.webClient = WebClient.builder()
+                .baseUrl(baseUrl)
+                .build();
     }
 
-    public Mono<PaymentResponse> deduct(PaymentRequest request){
-        return this.callUserService(DEDUCT, request);
-    }
-
-    public Mono<PaymentResponse> refund(PaymentRequest request){
-        return this.callUserService(REFUND, request);
-    }
-
-    private Mono<PaymentResponse> callUserService(String endPoint, PaymentRequest request){
-        return this.client
-                .post()
-                .uri(endPoint)
-                .bodyValue(request)
+    public Mono<User> getUserById(Integer id) {
+        return this.webClient.get()
+                .uri("{id}", id)
                 .retrieve()
-                .bodyToMono(PaymentResponse.class)
-                .onErrorReturn(this.buildErrorResponse(request));
+                .bodyToMono(User.class)
+                .onErrorResume(ex -> Mono.empty());
     }
-
-    private PaymentResponse buildErrorResponse(PaymentRequest request){
-        return PaymentResponse.create(
-                request.getUserId(),
-                null,
-                request.getAmount(),
-                Status.FAILED
-        );
-    }
-
 }

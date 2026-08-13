@@ -2,8 +2,11 @@ package com.vinsguru.webfluxpatterns.sec03.service;
 
 import com.vinsguru.webfluxpatterns.sec03.client.ProductClient;
 import com.vinsguru.webfluxpatterns.sec03.dto.OrchestrationRequestContext;
+import com.vinsguru.webfluxpatterns.sec03.dto.Status;
 import com.vinsguru.webfluxpatterns.sec03.dto.request.OrderRequest;
 import com.vinsguru.webfluxpatterns.sec03.dto.Product;
+import com.vinsguru.webfluxpatterns.sec03.dto.request.OrderResponse;
+import com.vinsguru.webfluxpatterns.sec03.util.OrchestrationUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
@@ -18,8 +21,13 @@ public class OrchestratorService {
     private final OrderCancellationService cancellationService;
 
 
-    public void placeOrder(Mono<OrderRequest> request) {
-        request.map(OrchestrationRequestContext::new);
+    public Mono<OrderResponse> placeOrder(Mono<OrderRequest> request) {
+        return request.map(OrchestrationRequestContext::new)
+                .flatMap(this::getProduct)
+                .doOnNext(OrchestrationUtil::buildRequestContext)
+                .flatMap(fulfillmentService::placeOrder)
+                .doOnNext(this::doOrderPostProcessing)
+                .map(this::toOrderResponse);
     }
 
     private Mono<OrchestrationRequestContext> getProduct(OrchestrationRequestContext ctx) {
@@ -27,5 +35,27 @@ public class OrchestratorService {
                 .map(Product::price)
                 .doOnNext(ctx::setProductPrice)
                 .thenReturn(ctx);
+    }
+
+    private void doOrderPostProcessing(OrchestrationRequestContext ctx) {
+        if (Status.FAILED.equals(ctx.getStatus())) {
+            this.cancellationService.cancelOrder(ctx);
+        }
+    }
+
+    private OrderResponse toOrderResponse(OrchestrationRequestContext ctx) {
+        boolean isSuccess = Status.SUCCESS.equals(ctx.getStatus());
+        var address = isSuccess ? ctx.getShippingResponse().address() :  null;
+        var expectedDelivery = isSuccess ? ctx.getShippingResponse().expectedDelivery() :  null;
+        return OrderResponse.builder()
+                .userId(ctx.getOrderRequest().userId())
+                .orderId(ctx.getOrderId())
+                .productId(ctx.getOrderRequest().productId())
+                .status(ctx.getStatus())
+                .address(address)
+                .expectedDelivery(expectedDelivery)
+                .build();
+
+
     }
 }

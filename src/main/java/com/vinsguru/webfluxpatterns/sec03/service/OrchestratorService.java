@@ -6,6 +6,7 @@ import com.vinsguru.webfluxpatterns.sec03.dto.Status;
 import com.vinsguru.webfluxpatterns.sec03.dto.request.OrderRequest;
 import com.vinsguru.webfluxpatterns.sec03.dto.Product;
 import com.vinsguru.webfluxpatterns.sec03.dto.request.OrderResponse;
+import com.vinsguru.webfluxpatterns.sec03.util.DebugUtil;
 import com.vinsguru.webfluxpatterns.sec03.util.OrchestrationUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -27,6 +28,7 @@ public class OrchestratorService {
                 .doOnNext(OrchestrationUtil::buildRequestContext)
                 .flatMap(fulfillmentService::placeOrder)
                 .doOnNext(this::doOrderPostProcessing)
+                .doOnNext(DebugUtil::print)
                 .map(this::toOrderResponse);
     }
 

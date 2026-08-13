@@ -1,4 +1,4 @@
-package com.vinsguru.webfluxpatterns.sec04.service;
+package com.vinsguru.webfluxpatterns.sec04.service.orchestrator;
 
 import com.vinsguru.webfluxpatterns.sec04.dto.OrchestrationRequestContext;
 import com.vinsguru.webfluxpatterns.sec04.exception.OrderFulfillmentFailure;
@@ -12,19 +12,20 @@ import java.util.function.Predicate;
 public abstract class Orchestrator {
 
     public abstract Mono<OrchestrationRequestContext> create(OrchestrationRequestContext ctx);
+
     public abstract Predicate<OrchestrationRequestContext> isSuccess();
+
     public abstract Consumer<OrchestrationRequestContext> cancel();
 
-    protected BiConsumer<OrchestrationRequestContext, SynchronousSink<OrchestrationRequestContext>> statusHandler(){
+
+    protected BiConsumer<OrchestrationRequestContext, SynchronousSink<OrchestrationRequestContext>> statusHandler() {
         return (ctx, sink) -> {
-            if(isSuccess().test(ctx)){
+            if (isSuccess().test(ctx)) {
                 sink.next(ctx);
-            }else{
-                sink.error(new OrderFulfillmentFailure());
+            } else {
+                sink.error(new OrderFulfillmentFailure("Error in order's processing"));
             }
         };
     }
-
-
 
 }

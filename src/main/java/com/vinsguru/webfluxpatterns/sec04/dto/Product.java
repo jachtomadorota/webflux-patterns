@@ -1,19 +1,11 @@
 package com.vinsguru.webfluxpatterns.sec04.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
 
-@Data
-@ToString
-@NoArgsConstructor
-@AllArgsConstructor(staticName = "create")
-public class Product {
+import lombok.Builder;
 
-    private Integer id;
-    private String category;
-    private String description;
-    private Integer price;
-
+@Builder
+public record Product(Integer id,
+                      String category,
+                      String description,
+                      Integer price) {
 }

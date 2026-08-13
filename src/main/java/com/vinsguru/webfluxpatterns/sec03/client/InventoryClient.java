@@ -49,6 +49,7 @@ public class InventoryClient {
 
     private InventoryResponse buildErrorResponse(InventoryRequest request) {
         return InventoryResponse.builder()
+
                 .productId(request.productId())
                 .quantity(request.quantity())
                 .status(Status.FAILED)

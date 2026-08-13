@@ -1,9 +1,9 @@
-package com.vinsguru.webfluxpatterns.sec04.service;
+package com.vinsguru.webfluxpatterns.sec04.service.orchestrator;
 
-import com.vinsguru.webfluxpatterns.sec04.client.ShippingClient;
+import com.vinsguru.webfluxpatterns.sec04.client.InventoryClient;
 import com.vinsguru.webfluxpatterns.sec04.dto.OrchestrationRequestContext;
 import com.vinsguru.webfluxpatterns.sec04.dto.Status;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
@@ -12,30 +12,31 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 @Service
-public class ShippingOrchestrator extends Orchestrator {
+@RequiredArgsConstructor
+public class InventoryOrchestrator extends Orchestrator {
 
-    @Autowired
-    private ShippingClient client;
+    private final InventoryClient client;
 
     @Override
     public Mono<OrchestrationRequestContext> create(OrchestrationRequestContext ctx) {
-        return this.client.schedule(ctx.getShippingRequest())
-                .doOnNext(ctx::setShippingResponse)
+        return this.client.deduct(ctx.getInventoryRequest())
+                .doOnNext(ctx::setInventoryResponse)
                 .thenReturn(ctx)
                 .handle(this.statusHandler());
     }
 
     @Override
     public Predicate<OrchestrationRequestContext> isSuccess() {
-        return ctx -> Objects.nonNull(ctx.getShippingResponse()) && Status.SUCCESS.equals(ctx.getShippingResponse().getStatus());
+        return ctx -> Objects.nonNull(ctx.getShippingRequest()) &&
+                Status.SUCCESS.equals(ctx.getInventoryResponse().status());
     }
 
     @Override
     public Consumer<OrchestrationRequestContext> cancel() {
         return ctx -> Mono.just(ctx)
                 .filter(isSuccess())
-                .map(OrchestrationRequestContext::getShippingRequest)
-                .flatMap(this.client::cancel)
+                .map(OrchestrationRequestContext::getInventoryRequest)
+                .flatMap(this.client::restore)
                 .subscribe();
     }
 }

@@ -1,6 +1,7 @@
-package com.vinsguru.webfluxpatterns.sec03.service.fullfilment;
+package com.vinsguru.webfluxpatterns.sec03.service;
 
 import com.vinsguru.webfluxpatterns.sec03.dto.OrchestrationRequestContext;
+import com.vinsguru.webfluxpatterns.sec03.dto.Status;
 import com.vinsguru.webfluxpatterns.sec03.service.orchestrator.Orchestrator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -20,5 +21,11 @@ public class OrderFulfillmentService {
                 .toList();
         return Mono.zip(list, a -> a[0])
                 .cast(OrchestrationRequestContext.class);
+    }
+
+    private void updateStatus(OrchestrationRequestContext ctx) {
+        boolean allSuccess = this.orchestrators.stream().allMatch(o -> o.isSuccess().test(ctx));
+        Status status = allSuccess ? Status.SUCCESS : Status.FAILED;
+        ctx.setStatus(status);
     }
 }

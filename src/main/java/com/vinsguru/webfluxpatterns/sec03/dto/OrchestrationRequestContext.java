@@ -16,7 +16,7 @@ import java.util.UUID;
 @ToString
 public class OrchestrationRequestContext {
 
-
+    private int count;
     private final UUID orderId = UUID.randomUUID();
     private Status status;
     private OrderRequest orderRequest;

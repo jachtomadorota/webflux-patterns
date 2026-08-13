@@ -1,4 +1,4 @@
-package com.vinsguru.webfluxpatterns.sec03.service;
+package com.vinsguru.webfluxpatterns.sec03.service.orchestrator;
 
 import com.vinsguru.webfluxpatterns.sec03.client.UserClient;
 import com.vinsguru.webfluxpatterns.sec03.dto.OrchestrationRequestContext;

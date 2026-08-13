@@ -1,25 +1,24 @@
-package com.vinsguru.webfluxpatterns.sec04.service;
+package com.vinsguru.webfluxpatterns.sec04.service.orchestrator;
 
 import com.vinsguru.webfluxpatterns.sec04.client.UserClient;
 import com.vinsguru.webfluxpatterns.sec04.dto.OrchestrationRequestContext;
 import com.vinsguru.webfluxpatterns.sec04.dto.Status;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
-import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 @Service
+@RequiredArgsConstructor
 public class PaymentOrchestrator extends Orchestrator {
 
-    @Autowired
-    private UserClient client;
+    private final UserClient userClient;
 
     @Override
     public Mono<OrchestrationRequestContext> create(OrchestrationRequestContext ctx) {
-        return this.client.deduct(ctx.getPaymentRequest())
+        return this.userClient.deduct(ctx.getPaymentRequest())
                 .doOnNext(ctx::setPaymentResponse)
                 .thenReturn(ctx)
                 .handle(this.statusHandler());
@@ -27,7 +26,7 @@ public class PaymentOrchestrator extends Orchestrator {
 
     @Override
     public Predicate<OrchestrationRequestContext> isSuccess() {
-        return ctx -> Objects.nonNull(ctx.getPaymentResponse()) && Status.SUCCESS.equals(ctx.getPaymentResponse().getStatus());
+        return ctx -> Status.SUCCESS.equals(ctx.getPaymentResponse().status());
     }
 
     @Override
@@ -35,8 +34,7 @@ public class PaymentOrchestrator extends Orchestrator {
         return ctx -> Mono.just(ctx)
                 .filter(isSuccess())
                 .map(OrchestrationRequestContext::getPaymentRequest)
-                .flatMap(this.client::refund)
+                .flatMap(this.userClient::refund)
                 .subscribe();
     }
-
 }

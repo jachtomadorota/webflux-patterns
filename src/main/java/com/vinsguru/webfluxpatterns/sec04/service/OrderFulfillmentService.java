@@ -1,47 +1,31 @@
 package com.vinsguru.webfluxpatterns.sec04.service;
 
-import com.vinsguru.webfluxpatterns.sec04.client.ProductClient;
 import com.vinsguru.webfluxpatterns.sec04.dto.OrchestrationRequestContext;
-import com.vinsguru.webfluxpatterns.sec04.dto.Product;
 import com.vinsguru.webfluxpatterns.sec04.dto.Status;
-import com.vinsguru.webfluxpatterns.sec04.util.OrchestrationUtil;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.vinsguru.webfluxpatterns.sec04.service.orchestrator.Orchestrator;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
+
 @Service
+@RequiredArgsConstructor
 public class OrderFulfillmentService {
 
-    @Autowired
-    private ProductClient productClient;
+    private final List<Orchestrator> orchestrators;
 
-    @Autowired
-    private PaymentOrchestrator paymentOrchestrator;
-
-    @Autowired
-    private InventoryOrchestrator inventoryOrchestrator;
-
-    @Autowired
-    private ShippingOrchestrator shippingOrchestrator;
-
-    public Mono<OrchestrationRequestContext> placeOrder(OrchestrationRequestContext ctx){
-        return this.getProduct(ctx)
-                .doOnNext(OrchestrationUtil::buildPaymentRequest)
-                .flatMap(this.paymentOrchestrator::create)
-                .doOnNext(OrchestrationUtil::buildInventoryRequest)
-                .flatMap(this.inventoryOrchestrator::create)
-                .doOnNext(OrchestrationUtil::buildShippingRequest)
-                .flatMap(this.shippingOrchestrator::create)
-                .doOnNext(c -> c.setStatus(Status.SUCCESS))
-                .doOnError(ex -> ctx.setStatus(Status.FAILED))
-                .onErrorReturn(ctx);
+    public Mono<OrchestrationRequestContext> placeOrder(OrchestrationRequestContext ctx) {
+        List<Mono<OrchestrationRequestContext>> list = orchestrators.stream()
+                .map(o -> o.create(ctx))
+                .toList();
+        return Mono.zip(list, a -> a[0])
+                .cast(OrchestrationRequestContext.class);
     }
 
-    private Mono<OrchestrationRequestContext> getProduct(OrchestrationRequestContext ctx){
-        return this.productClient.getProduct(ctx.getOrderRequest().getProductId())
-                                 .map(Product::getPrice)
-                                 .doOnNext(ctx::setProductPrice)
-                                 .map(i -> ctx);
+    private void updateStatus(OrchestrationRequestContext ctx) {
+        boolean allSuccess = this.orchestrators.stream().allMatch(o -> o.isSuccess().test(ctx));
+        Status status = allSuccess ? Status.SUCCESS : Status.FAILED;
+        ctx.setStatus(status);
     }
-
 }

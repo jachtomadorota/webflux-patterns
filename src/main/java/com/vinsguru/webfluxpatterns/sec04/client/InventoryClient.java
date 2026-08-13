@@ -1,52 +1,59 @@
 package com.vinsguru.webfluxpatterns.sec04.client;
 
-import com.vinsguru.webfluxpatterns.sec04.dto.InventoryRequest;
-import com.vinsguru.webfluxpatterns.sec04.dto.InventoryResponse;
 import com.vinsguru.webfluxpatterns.sec04.dto.Status;
+import com.vinsguru.webfluxpatterns.sec04.dto.request.InventoryRequest;
+import com.vinsguru.webfluxpatterns.sec04.dto.response.InventoryResponse;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
-@Service
+@Component
 public class InventoryClient {
 
-    private static final String DEDUCT = "deduct";
-    private static final String RESTORE = "restore";
-    private final WebClient client;
+    private final static String RESTORE_ENDPOINT = "restore";
+    private final static String DEDUCT_ENDPOINT = "deduct";
+    private final WebClient webClient;
 
-    public InventoryClient(@Value("${sec04.inventory.service}") String baseUrl){
-        this.client = WebClient.builder()
-                               .baseUrl(baseUrl)
-                               .build();
+    public InventoryClient(@Value("${sec04.inventory.service}") String baseUrl) {
+        this.webClient = WebClient.builder()
+                .baseUrl(baseUrl)
+                .build();
     }
 
-    public Mono<InventoryResponse> deduct(InventoryRequest request){
-        return this.callInventoryService(DEDUCT, request);
+    public Mono<Integer> getInventoryById(Integer id) {
+        return this.webClient.get()
+                .uri("{id}", id)
+                .retrieve()
+                .bodyToMono(Integer.class)
+                .onErrorResume(ex -> Mono.empty());
     }
 
-    public Mono<InventoryResponse> restore(InventoryRequest request){
-        return this.callInventoryService(RESTORE, request);
+    public Mono<InventoryResponse> deduct(InventoryRequest request) {
+        return callUserService(request, DEDUCT_ENDPOINT);
+
     }
 
-    private Mono<InventoryResponse> callInventoryService(String endPoint, InventoryRequest request){
-        return this.client
-                .post()
-                .uri(endPoint)
+    public Mono<InventoryResponse> restore(InventoryRequest request) {
+        return callUserService(request, RESTORE_ENDPOINT);
+    }
+
+    private Mono<InventoryResponse> callUserService(InventoryRequest request, String endpoint) {
+        return this.webClient.post()
+                .uri(endpoint)
                 .bodyValue(request)
                 .retrieve()
                 .bodyToMono(InventoryResponse.class)
-                .onErrorReturn(this.buildErrorResponse(request));
+                .onErrorReturn(buildErrorResponse(request));
     }
 
-    private InventoryResponse buildErrorResponse(InventoryRequest request){
-        return InventoryResponse.create(
-                null,
-                request.getProductId(),
-                request.getQuantity(),
-                null,
-                Status.FAILED
-        );
-    }
+    private InventoryResponse buildErrorResponse(InventoryRequest request) {
+        return InventoryResponse.builder()
+                .productId(request.productId())
+                .quantity(request.quantity())
+                .status(Status.FAILED)
+                .build();
 
+
+    }
 }

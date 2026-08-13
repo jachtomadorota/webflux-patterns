@@ -1,52 +1,62 @@
 package com.vinsguru.webfluxpatterns.sec04.client;
 
-import com.vinsguru.webfluxpatterns.sec04.dto.PaymentRequest;
-import com.vinsguru.webfluxpatterns.sec04.dto.PaymentResponse;
 import com.vinsguru.webfluxpatterns.sec04.dto.Status;
+import com.vinsguru.webfluxpatterns.sec04.dto.User;
+import com.vinsguru.webfluxpatterns.sec04.dto.request.PaymentRequest;
+import com.vinsguru.webfluxpatterns.sec04.dto.response.PaymentResponse;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
-@Service
+@Component
 public class UserClient {
 
-    private static final String DEDUCT = "deduct";
-    private static final String REFUND = "refund";
-    private final WebClient client;
+    private final static String REFUND_ENDPOINT = "refund";
+    private final static String DEDUCT_ENDPOINT = "deduct";
+    private final WebClient webClient;
 
-    public UserClient(@Value("${sec04.user.service}") String baseUrl){
-        this.client = WebClient.builder()
-                               .baseUrl(baseUrl)
-                               .build();
+    public UserClient(@Value("${sec04.user.service}") String baseUrl) {
+        this.webClient = WebClient.builder()
+                .baseUrl(baseUrl)
+                .build();
     }
 
-    public Mono<PaymentResponse> deduct(PaymentRequest request){
-        return this.callUserService(DEDUCT, request);
+    public Mono<User> getUserById(Integer id) {
+        return this.webClient.get()
+                .uri("{id}", id)
+                .retrieve()
+                .bodyToMono(User.class)
+                .onErrorResume(ex -> Mono.empty());
     }
 
-    public Mono<PaymentResponse> refund(PaymentRequest request){
-        return this.callUserService(REFUND, request);
+    public Mono<PaymentResponse> deduct(PaymentRequest request) {
+        return callUserService(request, DEDUCT_ENDPOINT);
+
     }
 
-    private Mono<PaymentResponse> callUserService(String endPoint, PaymentRequest request){
-        return this.client
-                .post()
-                .uri(endPoint)
+    public Mono<PaymentResponse> refund(PaymentRequest request) {
+        return callUserService(request, REFUND_ENDPOINT);
+    }
+
+    private Mono<PaymentResponse> callUserService(PaymentRequest request, String endpoint) {
+        return this.webClient.post()
+                .uri(endpoint)
                 .bodyValue(request)
                 .retrieve()
                 .bodyToMono(PaymentResponse.class)
-                .onErrorReturn(this.buildErrorResponse(request));
+                .onErrorReturn(buildErrorResponse(request));
     }
 
-    private PaymentResponse buildErrorResponse(PaymentRequest request){
-        return PaymentResponse.create(
-                null,
-                request.getUserId(),
-                null,
-                request.getAmount(),
-                Status.FAILED
-        );
+    private PaymentResponse buildErrorResponse(PaymentRequest request) {
+        return PaymentResponse.builder()
+                .userId(request.userId())
+                .balance(request.amount())
+                .status(Status.FAILED)
+                .build();
+
+
     }
+
 
 }

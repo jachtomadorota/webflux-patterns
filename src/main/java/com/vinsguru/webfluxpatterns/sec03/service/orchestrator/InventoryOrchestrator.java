@@ -1,6 +1,6 @@
-package com.vinsguru.webfluxpatterns.sec03.service;
+package com.vinsguru.webfluxpatterns.sec03.service.orchestrator;
 
-import com.vinsguru.webfluxpatterns.sec03.client.ShippingClient;
+import com.vinsguru.webfluxpatterns.sec03.client.InventoryClient;
 import com.vinsguru.webfluxpatterns.sec03.dto.OrchestrationRequestContext;
 import com.vinsguru.webfluxpatterns.sec03.dto.Status;
 import lombok.RequiredArgsConstructor;
@@ -12,28 +12,28 @@ import java.util.function.Predicate;
 
 @Service
 @RequiredArgsConstructor
-public class ShippingOrchestrator extends Orchestrator {
+public class InventoryOrchestrator extends Orchestrator {
 
-    private final ShippingClient client;
+    private final InventoryClient client;
 
     @Override
     public Mono<OrchestrationRequestContext> create(OrchestrationRequestContext ctx) {
-        return this.client.schedule(ctx.getShippingRequest())
-                .doOnNext(ctx::setShippingResponse)
+        return this.client.deduct(ctx.getInventoryRequest())
+                .doOnNext(ctx::setInventoryResponse)
                 .thenReturn(ctx);
     }
 
     @Override
     public Predicate<OrchestrationRequestContext> isSuccess() {
-        return ctx -> Status.SUCCESS.equals(ctx.getShippingResponse().status());
+        return ctx -> Status.SUCCESS.equals(ctx.getInventoryResponse().status());
     }
 
     @Override
     public Consumer<OrchestrationRequestContext> cancel() {
         return ctx -> Mono.just(ctx)
                 .filter(isSuccess())
-                .map(OrchestrationRequestContext::getShippingRequest)
-                .flatMap(this.client::cancel)
+                .map(OrchestrationRequestContext::getInventoryRequest)
+                .flatMap(this.client::restore)
                 .subscribe();
     }
 }

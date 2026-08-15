@@ -25,7 +25,7 @@ public class ProductClient {
                 .uri("{id}", id)
                 .retrieve()
                 .bodyToMono(Product.class)
-                .timeout(Duration.ofMillis(500))
+                .timeout(Duration.ofSeconds(2))
                 .onErrorResume(ex -> Mono.empty());
     }
 

@@ -28,6 +28,7 @@ public class ReviewClient {
                 .retrieve()
                 .bodyToFlux(Review.class)
                 .collectList()
+                .timeout(Duration.ofSeconds(2))
                 .onErrorReturn(Collections.emptyList());
     }
 

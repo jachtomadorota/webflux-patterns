@@ -1,11 +1,11 @@
 package com.vinsguru.webfluxpatterns.sec05.client;
 
-import com.vinsguru.webfluxpatterns.sec04.dto.Product;
+import com.vinsguru.webfluxpatterns.sec05.dto.car.CarReservationRequest;
+import com.vinsguru.webfluxpatterns.sec05.dto.car.CarReservationResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
 @Component
 public class CarClient {
@@ -18,10 +18,11 @@ public class CarClient {
                 .build();
     }
 
-    public Flux<Product> reserve() {
-        return this.webClient.get()
+    public Flux<CarReservationResponse> reserve(Flux<CarReservationRequest> request) {
+        return this.webClient.post()
                 .uri("reserve")
+                .bodyValue(request)
                 .retrieve()
-                .bodyToFlux(Product.class);
+                .bodyToFlux(CarReservationResponse.class);
     }
 }

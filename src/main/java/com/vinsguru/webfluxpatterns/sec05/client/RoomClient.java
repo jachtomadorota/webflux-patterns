@@ -1,6 +1,7 @@
 package com.vinsguru.webfluxpatterns.sec05.client;
 
-import com.vinsguru.webfluxpatterns.sec04.dto.Product;
+import com.vinsguru.webfluxpatterns.sec05.dto.room.RoomReservationRequest;
+import com.vinsguru.webfluxpatterns.sec05.dto.room.RoomReservationResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -17,10 +18,11 @@ public class RoomClient {
                 .build();
     }
 
-    public Flux<Product> reserve() {
-        return this.webClient.get()
+    public Flux<RoomReservationResponse> reserve(Flux<RoomReservationRequest> request) {
+        return this.webClient.post()
                 .uri("reserve")
+                .bodyValue(request)
                 .retrieve()
-                .bodyToFlux(Product.class);
+                .bodyToFlux(RoomReservationResponse.class);
     }
 }

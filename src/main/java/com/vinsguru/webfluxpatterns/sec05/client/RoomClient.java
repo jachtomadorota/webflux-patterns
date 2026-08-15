@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 @Component
 public class RoomClient {
@@ -23,6 +24,7 @@ public class RoomClient {
                 .uri("reserve")
                 .bodyValue(request)
                 .retrieve()
-                .bodyToFlux(RoomReservationResponse.class);
+                .bodyToFlux(RoomReservationResponse.class)
+                .onErrorResume(ex -> Mono.empty());
     }
 }

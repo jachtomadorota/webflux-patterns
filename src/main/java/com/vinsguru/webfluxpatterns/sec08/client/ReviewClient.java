@@ -3,7 +3,6 @@ package com.vinsguru.webfluxpatterns.sec08.client;
 import com.vinsguru.webfluxpatterns.sec08.dto.Review;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;

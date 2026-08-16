@@ -10,6 +10,16 @@ resilience4j.circuitbreaker:
       recordExceptions:
         - org.springframework.web.reactive.function.client.WebClientResponseException
         - java.util.concurrent.TimeoutException
+    product-service:
+      slidingWindowType: COUNT_BASED
+      slidingWindowSize: 4
+      minimumNumberOfCalls: 2
+      failureRateThreshold: 50
+      waitDurationInOpenState: 10s
+      permittedNumberOfCallsInHalfOpenState: 2
+      recordExceptions:
+        - org.springframework.web.reactive.function.client.WebClientResponseException
+        - java.util.concurrent.TimeoutException
 resilience4j.ratelimiter:
   instances:
     calculator-service:

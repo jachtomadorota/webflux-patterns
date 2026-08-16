@@ -1,6 +1,7 @@
 package com.vinsguru.webfluxpatterns.sec08.client;
 
 import com.vinsguru.webfluxpatterns.sec08.dto.Product;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -17,6 +18,7 @@ public class ProductClient {
                                .build();
     }
 
+    @CircuitBreaker(name = "product-service")
     public Mono<Product> getProduct(Integer id){
         return this.client
                 .get()
